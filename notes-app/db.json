@@ -19,6 +19,31 @@
       "id": "4",
       "content": "Hello world:)",
       "important": false
+    },
+    {
+      "id": "5",
+      "content": "Goodbye!",
+      "important": true
+    },
+    {
+      "id": "6",
+      "content": "I'm hungry :(",
+      "important": false
+    },
+    {
+      "id": "7",
+      "content": "This is so cool!",
+      "important": true
+    },
+    {
+      "id": "8",
+      "content": "HTML is NOT easy",
+      "important": false
+    },
+    {
+      "id": "9",
+      "content": "When do I study DSA?",
+      "important": false
     }
   ]
 }
