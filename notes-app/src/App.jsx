@@ -5,10 +5,10 @@ import Notification from "./components/Notification.jsx";
 import Footer from "./components/Footer.jsx";
 
 const App = () => {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(null);
   const [newNote, setNewNote] = useState("a new note...");
   const [showAll, setShowAll] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("some error happened...");
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     // console.log("effect");
@@ -22,6 +22,13 @@ const App = () => {
   }, []);
   // shows that useEffect is executed asynchronously
   // console.log("render", notes.length, "notes"); //render 0 notes -> render 4 notes
+
+  // Do not render anything if notes is still null.
+  // This conditional rendering is useful in cases where it is impossible to define the
+  // state so that the initial rendering is possible.
+  if (!notes) {
+    return null;
+  }
 
   const addNote = (event) => {
     event.preventDefault();
@@ -56,6 +63,7 @@ const App = () => {
         setNotes(notes.map((note) => (note.id === id ? returnedNote : note)));
       })
       .catch((error) => {
+        console.log(error.message);
         setErrorMessage(
           `Note '${note.content}' was already removed from server`
         );
