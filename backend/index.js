@@ -4,6 +4,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
+// Default data
 let notes = [
   {
     id: "1",
@@ -21,6 +22,19 @@ let notes = [
     important: true,
   },
 ];
+
+// middleware
+const requestLogger = (request, response, next) => {
+  console.log("Method:", request.method);
+  console.log("Path:", request.path);
+  console.log("Body:", request.body);
+  console.log("---");
+  next();
+};
+// json-parser should be placed before requestLogger, because
+// otherwise request.body will not be initialized when the logger is executed.
+app.use(express.json());
+app.use(requestLogger);
 
 const generateId = () => {
   const maxId =
@@ -76,6 +90,14 @@ app.post("/api/notes", (request, response) => {
 
   response.json(note);
 });
+
+// When we want to use middleware function after routes, we do this
+// when the middleware functions are only called if no route handler process the HTTP request.
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
