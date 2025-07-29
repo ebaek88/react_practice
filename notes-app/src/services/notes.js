@@ -2,13 +2,17 @@ import axios from "axios";
 const baseUrl = "/api/notes";
 
 const getAll = async () => {
-  const response = await axios.get(baseUrl);
-  const nonExisting = {
-    id: 10000,
-    content: "This note is not saved to server",
-    important: true,
-  };
-  return response.data.concat(nonExisting);
+  try {
+    const response = await axios.get(baseUrl);
+    // const nonExisting = {
+    //   id: 10000,
+    //   content: "This note is not saved to server",
+    //   important: true,
+    // };
+    return response.data;
+  } catch (error) {
+    console.log(error.message);
+  }
 };
 
 const create = (newObject) => {
