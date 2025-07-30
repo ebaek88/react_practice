@@ -5,7 +5,6 @@ const Note = require("./models/note.js");
 
 // Express setup
 const app = express();
-app.use(express.json());
 // app.use(cors({ origin: "*" }));
 app.use(express.static("dist"));
 
@@ -36,7 +35,21 @@ const requestLogger = (request, response, next) => {
   console.log("---");
   next();
 };
-// json-parser should be placed before requestLogger, because
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+// json-parser should be loaded before requestLogger, because
 // otherwise request.body will not be initialized when the logger is executed.
 app.use(express.json());
 app.use(requestLogger);
@@ -64,12 +77,16 @@ app.get("/api/notes", (request, response) => {
     });
 });
 
-app.get("/api/notes/:id", (request, response) => {
+app.get("/api/notes/:id", (request, response, next) => {
   Note.findById(request.params.id)
     .then((note) => {
-      response.json(note);
+      if (note) {
+        response.json(note);
+      } else {
+        response.status(404).end();
+      }
     })
-    .catch(() => response.status(404).json({ error: "not found 🤦" }));
+    .catch((error) => next(error));
 });
 
 app.delete("/api/notes/:id", (request, response) => {
@@ -101,13 +118,10 @@ app.post("/api/notes", (request, response) => {
     .catch((err) => console.log(err.message));
 });
 
-// When we want to use middleware function after routes, we do this
-// when the middleware functions are only called if no route handler process the HTTP request.
-const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
-};
-
+// The middleware for handling unsupported routes should be loaded AFTER the route handlers.
+// Otherwise, it will respond to all requests with 404 unknown endpoint!
 app.use(unknownEndpoint);
+app.use(errorHandler); // this error handler has to be the LAST loaded middleware, also all the routes should be registered before this!
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
