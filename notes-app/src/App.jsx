@@ -11,11 +11,9 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
-    // console.log("effect");
     noteService
       .getAll()
       .then((initialNotes) => {
-        // console.log("promise fulfilled");
         setNotes(initialNotes);
       })
       .catch((error) => console.log(error.message));
@@ -30,6 +28,13 @@ const App = () => {
     return null;
   }
 
+  const showNotification = (msg, timeout = 3000) => {
+    setErrorMessage(msg);
+    setTimeout(() => {
+      setErrorMessage(null);
+    }, timeout);
+  };
+
   const addNote = (event) => {
     event.preventDefault();
     const noteObject = {
@@ -41,7 +46,7 @@ const App = () => {
     noteService
       .create(noteObject)
       .then((returnedNote) => {
-        console.log(returnedNote);
+        // console.log(returnedNote);
         setNotes(notes.concat(returnedNote));
         setNewNote("");
       })
@@ -49,7 +54,6 @@ const App = () => {
   };
 
   const handleNoteChange = (event) => {
-    // console.log(event.target.value);
     setNewNote(event.target.value);
   };
 
@@ -64,12 +68,27 @@ const App = () => {
       })
       .catch((error) => {
         console.log(error.message);
-        setErrorMessage(
+        showNotification(
           `Note '${note.content}' was already removed from server`
         );
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
+        setNotes(notes.filter((note) => note.id !== id));
+      });
+  };
+
+  const deleteNote = (id) => {
+    const note = notes.find((note) => note.id === id);
+    if (!note) return;
+
+    noteService
+      .deleteNote(id)
+      .then(showNotification(`Deleted note ${note.content} successfully!`))
+      .catch((error) => {
+        console.log(error.message);
+        showNotification(
+          `Note '${note.content}' was already removed from server`
+        );
+      })
+      .finally(() => {
         setNotes(notes.filter((note) => note.id !== id));
       });
   };
@@ -91,6 +110,7 @@ const App = () => {
             key={note.id}
             note={note}
             toggleImportance={() => toggleImportanceOf(note.id)}
+            deleteNote={() => deleteNote(note.id)}
           />
         ))}
       </ul>

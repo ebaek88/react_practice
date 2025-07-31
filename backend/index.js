@@ -8,25 +8,6 @@ const app = express();
 // app.use(cors({ origin: "*" }));
 app.use(express.static("dist"));
 
-// Default data
-// let notes = [
-//   {
-//     id: "1",
-//     content: "HTML is easy",
-//     important: true,
-//   },
-//   {
-//     id: "2",
-//     content: "Browser can execute only JavaScript",
-//     important: false,
-//   },
-//   {
-//     id: "3",
-//     content: "GET and POST are the most important methods of HTTP protocol",
-//     important: true,
-//   },
-// ];
-
 // middleware
 const requestLogger = (request, response, next) => {
   console.log("Method:", request.method);
@@ -54,12 +35,7 @@ const errorHandler = (error, request, response, next) => {
 app.use(express.json());
 app.use(requestLogger);
 
-// const generateId = () => {
-//   const maxId =
-//     notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0;
-//   return String(maxId + 1);
-// };
-
+// route handlers
 app.get("/", (request, response) => {
   // Since the parameter is a string, Express automatically sets the value of the Content-type header to be text/html.
   // The status code of the response defaults to 200.
@@ -89,11 +65,12 @@ app.get("/api/notes/:id", (request, response, next) => {
     .catch((error) => next(error));
 });
 
-app.delete("/api/notes/:id", (request, response) => {
-  const id = request.params.id;
-  notes = notes.filter((note) => note.id !== id);
-
-  response.status(204).end();
+app.delete("/api/notes/:id", (request, response, next) => {
+  Note.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
 app.post("/api/notes", (request, response) => {
@@ -116,6 +93,25 @@ app.post("/api/notes", (request, response) => {
       response.json(savedNote);
     })
     .catch((err) => console.log(err.message));
+});
+
+app.put("/api/notes/:id", (request, response, next) => {
+  const { content, important } = request.body;
+
+  Note.findById(request.params.id)
+    .then((note) => {
+      if (!note) {
+        return response.status(404).end();
+      }
+
+      note.content = content;
+      note.important = important;
+
+      return note.save().then((updatedNote) => {
+        response.json(updatedNote);
+      });
+    })
+    .catch((error) => next(error));
 });
 
 // The middleware for handling unsupported routes should be loaded AFTER the route handlers.
