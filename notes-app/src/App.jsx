@@ -50,7 +50,10 @@ const App = () => {
         setNotes(notes.concat(returnedNote));
         setNewNote("");
       })
-      .catch((error) => console.log(error.message));
+      .catch((error) => {
+        console.log(error.response.data.error);
+        showNotification(error.response.data.error);
+      });
   };
 
   const handleNoteChange = (event) => {
