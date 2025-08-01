@@ -17,19 +17,6 @@ const requestLogger = (request, response, next) => {
   next();
 };
 
-const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
-};
-
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message);
-
-  if (error.name === "CastError") {
-    return response.status(400).send({ error: "malformatted id" });
-  }
-
-  next(error);
-};
 // json-parser should be loaded before requestLogger, because
 // otherwise request.body will not be initialized when the logger is executed.
 app.use(express.json());
@@ -73,14 +60,14 @@ app.delete("/api/notes/:id", (request, response, next) => {
     .catch((error) => next(error));
 });
 
-app.post("/api/notes", (request, response) => {
+app.post("/api/notes", (request, response, next) => {
   const body = request.body;
 
-  if (!body.content) {
-    return response.status(400).json({
-      error: "content missing",
-    });
-  }
+  // if (!body.content) {
+  //   return response.status(400).json({
+  //     error: "content missing",
+  //   });
+  // } <- now validators from Mongoose will take care of it
 
   const note = new Note({
     content: body.content,
@@ -92,7 +79,7 @@ app.post("/api/notes", (request, response) => {
     .then((savedNote) => {
       response.json(savedNote);
     })
-    .catch((err) => console.log(err.message));
+    .catch((err) => next(err));
 });
 
 app.put("/api/notes/:id", (request, response, next) => {
@@ -116,7 +103,23 @@ app.put("/api/notes/:id", (request, response, next) => {
 
 // The middleware for handling unsupported routes should be loaded AFTER the route handlers.
 // Otherwise, it will respond to all requests with 404 unknown endpoint!
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
 app.use(unknownEndpoint);
+
+// Error handler
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
+  }
+
+  next(error);
+};
 app.use(errorHandler); // this error handler has to be the LAST loaded middleware, also all the routes should be registered before this!
 
 const PORT = process.env.PORT;
