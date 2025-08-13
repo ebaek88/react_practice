@@ -10,29 +10,26 @@ const notesRouter = require("express").Router();
 const Note = require("../models/note.js");
 
 // Adding HTTP method routes, just like an application.
-notesRouter.get("/", (req, res, next) => {
-  // console.log("GET /api/notes called");
-  Note.find({})
-    .then((notes) => {
-      res.json(notes); // .json() will send the notes array that was passed to it as a JSON formatted string.
-      // Express automatically sets the Content-type header with the appropriate value of application/json.
-    })
-    .catch((err) => next(err));
+notesRouter.get("/", async (req, res, next) => {
+  try {
+    const notes = await Note.find({});
+    res.json(notes); // .json() will send the notes array that was passed to it as a JSON formatted string.
+    // Express automatically sets the Content-type header with the appropriate value of application/json.
+  } catch (err) {
+    next(err);
+  }
 });
 
-notesRouter.get("/:id", (req, res, next) => {
-  Note.findById(req.params.id)
-    .then((note) => {
-      if (note) {
-        res.json(note);
-      } else {
-        res.status(404).end();
-      }
-    })
-    .catch((err) => next(err));
+notesRouter.get("/:id", async (req, res, next) => {
+  try {
+    const note = await Note.findById(req.params.id);
+    note ? res.json(note) : res.status(404).end();
+  } catch (err) {
+    next(err);
+  }
 });
 
-notesRouter.post("/", (req, res, next) => {
+notesRouter.post("/", async (req, res, next) => {
   const body = req.body;
 
   const note = new Note({
@@ -40,40 +37,41 @@ notesRouter.post("/", (req, res, next) => {
     important: body.important || false,
   });
 
-  note
-    .save()
-    .then((savedNote) => {
-      res.json(savedNote);
-    })
-    .catch((err) => next(err));
+  try {
+    const savedNote = await note.save();
+    res.status(201).json(savedNote);
+  } catch (err) {
+    next(err);
+  }
 });
 
-notesRouter.delete("/:id", (req, res, next) => {
-  Note.findByIdAndDelete(req.params.id)
-    .then(() => {
-      res.status(204).end();
-    })
-    .catch((err) => next(err));
+notesRouter.delete("/:id", async (req, res, next) => {
+  try {
+    await Note.findByIdAndDelete(req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
 });
 
-notesRouter.put("/:id", (req, res, next) => {
+notesRouter.put("/:id", async (req, res, next) => {
   const { content, important } = req.body;
 
-  Note.findById(req.params.id)
-    .then((note) => {
-      if (!note) {
-        return res.status(404).end();
-      }
+  try {
+    const note = await Note.findById(req.params.id);
 
-      note.content = content;
-      note.important = important;
+    if (!note) {
+      return res.status(404).end();
+    }
 
-      return note.save();
-    })
-    .then((updatedNote) => {
-      res.json(updatedNote);
-    })
-    .catch((err) => next(err));
+    note.content = content;
+    note.important = important;
+
+    const updatedNote = await note.save();
+    res.json(updatedNote);
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = notesRouter;
