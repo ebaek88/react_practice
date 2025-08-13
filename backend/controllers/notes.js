@@ -11,7 +11,7 @@ const Note = require("../models/note.js");
 
 // Adding HTTP method routes, just like an application.
 notesRouter.get("/", (req, res, next) => {
-  console.log("GET /api/notes called");
+  // console.log("GET /api/notes called");
   Note.find({})
     .then((notes) => {
       res.json(notes); // .json() will send the notes array that was passed to it as a JSON formatted string.
