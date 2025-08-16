@@ -13,7 +13,10 @@ const User = require("../models/user.js");
 // Adding HTTP method routes, just like an application.
 notesRouter.get("/", async (req, res, next) => {
   try {
-    const notes = await Note.find({});
+    const notes = await Note.find({}).populate("user", {
+      username: 1,
+      name: 1,
+    });
     res.json(notes); // .json() will send the notes array that was passed to it as a JSON formatted string.
     // Express automatically sets the Content-type header with the appropriate value of application/json.
   } catch (err) {
