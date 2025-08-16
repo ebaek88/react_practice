@@ -13,3 +13,23 @@ Content-Type: application/json
   "content": "lol",
   "important": true
 }
+
+###
+POST http://localhost:3001/api/notes
+Content-Type: application/json
+
+{
+  "content": "User id of the note creator is at the start sent along the request",
+  "important": true,
+  "userId": "689fc1891ef44aada4554489"
+}
+
+###
+POST http://localhost:3001/api/notes
+Content-Type: application/json
+
+{
+  "content": "I wonder how Spring Boot works",
+  "important": false,
+  "userId": "689fc1891ef44aada4554489"
+}

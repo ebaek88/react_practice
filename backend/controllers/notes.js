@@ -8,6 +8,7 @@
 
 const notesRouter = require("express").Router();
 const Note = require("../models/note.js");
+const User = require("../models/user.js");
 
 // Adding HTTP method routes, just like an application.
 notesRouter.get("/", async (req, res, next) => {
@@ -32,13 +33,23 @@ notesRouter.get("/:id", async (req, res, next) => {
 notesRouter.post("/", async (req, res, next) => {
   const body = req.body;
 
+  const user = await User.findById(body.userId);
+
+  if (!user) {
+    return res.status(400).json({ error: "userId missing or not valid" });
+  }
+
   const note = new Note({
     content: body.content,
     important: body.important || false,
+    user: user._id,
   });
 
   try {
     const savedNote = await note.save();
+    user.notes = user.notes.concat(savedNote._id);
+    await user.save();
+
     res.status(201).json(savedNote);
   } catch (err) {
     next(err);

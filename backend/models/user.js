@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema({
   passwordHash: String,
   notes: [
     {
+      // The field type is ObjectId, meaning it refers to another document.
+      //  The ref field specifies the name of the model being referenced.
       type: mongoose.Schema.Types.ObjectId,
       ref: "Note",
     },

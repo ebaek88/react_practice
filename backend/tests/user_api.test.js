@@ -96,7 +96,9 @@ describe("when there is initially one user in db", () => {
     const newUser = {
       username: "abc12345",
       name: "Hello",
-      password: "salainen",
+      // password: "salainen",
+      // password: "Salainen1234",
+      password: "salainen1234!",
     };
 
     const result = await api

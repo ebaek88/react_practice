@@ -5,6 +5,7 @@ const supertest = require("supertest");
 const app = require("../app.js");
 const helper = require("./test_helper.js");
 const Note = require("../models/note.js");
+const User = require("../models/user.js");
 
 const api = supertest(app);
 
@@ -12,6 +13,8 @@ describe("when there are initially some notes saved", () => {
   beforeEach(async () => {
     await Note.deleteMany({});
     await Note.insertMany(helper.initialNotes);
+    await User.deleteOne({ username: "ghong1987" });
+    await User.insertOne(helper.initialUser);
     // Same as
     // const noteObjects = helper.initialNotes.map((note) => new Note(note));
     // const promiseArray = noteObjects.map((note) => note.save());
@@ -63,10 +66,15 @@ describe("when there are initially some notes saved", () => {
   });
 
   describe("addition of a new note", () => {
-    test("succeeds with valid data", async () => {
+    test.only("succeeds with valid data", async () => {
+      const response = await api.get("/api/users/");
+      const users = response.body;
+      const userIdToUse = users[1].id;
+
       const newNote = {
         content: "async/await simplifies making async calls",
         important: true,
+        userId: userIdToUse,
       };
 
       await api
@@ -83,8 +91,13 @@ describe("when there are initially some notes saved", () => {
     });
 
     test("fails with status code 400 if data invalid", async () => {
+      const response = await api.get("/api/users/");
+      const users = response.body;
+      const userIdToUse = users[1].id;
+
       const newNote = {
         important: true,
+        userId: userIdToUse,
       };
 
       await api.post("/api/notes").send(newNote).expect(400);
