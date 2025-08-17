@@ -7,6 +7,7 @@
 // You can then use a router for a particular root URL in this way separating your routes into files or even mini-apps.
 
 const notesRouter = require("express").Router();
+const jwt = require("jsonwebtoken");
 const Note = require("../models/note.js");
 const User = require("../models/user.js");
 
@@ -33,10 +34,22 @@ notesRouter.get("/:id", async (req, res, next) => {
   }
 });
 
+const getTokenFrom = (request) => {
+  const authorization = request.get("authorization");
+  if (authorization && authorization.startsWith("Bearer ")) {
+    return authorization.replace("Bearer ", "");
+  }
+  return null;
+};
+
 notesRouter.post("/", async (req, res, next) => {
   const body = req.body;
+  const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
+  if (!decodedToken.id) {
+    return res.status(401).json({ error: "token invalid" });
+  }
 
-  const user = await User.findById(body.userId);
+  const user = await User.findById(decodedToken.id);
 
   if (!user) {
     return res.status(400).json({ error: "userId missing or not valid" });
