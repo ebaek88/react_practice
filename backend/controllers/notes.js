@@ -44,12 +44,15 @@ const getTokenFrom = (request) => {
 
 notesRouter.post("/", async (req, res, next) => {
   const body = req.body;
+
+  // Check if login has been made beforehand
   const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
   if (!decodedToken.id) {
     return res.status(401).json({ error: "token invalid" });
   }
 
   try {
+    // Check if the token is issued to a valid user
     const user = await User.findById(decodedToken.id);
 
     if (!user) {
@@ -73,8 +76,30 @@ notesRouter.post("/", async (req, res, next) => {
 });
 
 notesRouter.delete("/:id", async (req, res, next) => {
+  // Check if login has been made beforehand
+  const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
+  if (!decodedToken.id) {
+    return res.status(401).json({ error: "token invalid" });
+  }
+
   try {
+    // Check if the token is issued to a valid user
+    const user = await User.findById(decodedToken.id);
+    if (!user) {
+      return res.status(400).json({ error: "userId missing or not valid" });
+    }
+
+    // Check if the note to be deleted has been created by the user logged in
+    const noteToDelete = await Note.findById(req.params.id);
+    if (noteToDelete.user.toString() !== user.id) {
+      return res.status(401).json({
+        error: "a note can be deleted only by the user who created it",
+      });
+    }
+
+    // Delete the note
     await Note.findByIdAndDelete(req.params.id);
+    // Then, delete the note from the notes array in the user document
     res.status(204).end();
   } catch (err) {
     next(err);
@@ -82,19 +107,41 @@ notesRouter.delete("/:id", async (req, res, next) => {
 });
 
 notesRouter.put("/:id", async (req, res, next) => {
-  const { content, important } = req.body;
+  // Check if login has been made beforehand
+  const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
+  if (!decodedToken.id) {
+    return res.status(401).json({ error: "token invalid" });
+  }
 
   try {
-    const note = await Note.findById(req.params.id);
+    // Check if the token is issued to a valid user
+    const user = await User.findById(decodedToken.id);
+    if (!user) {
+      return res.status(400).json({ error: "userId missing or not valid" });
+    }
 
-    if (!note) {
+    const noteToUpdate = await Note.findById(req.params.id);
+
+    if (!noteToUpdate) {
       return res.status(404).end();
     }
 
-    note.content = content;
-    note.important = important;
+    // Check if the note to be updated has been created by the user logged in
+    if (noteToUpdate.user.toString() !== user.id) {
+      return res.status(401).json({
+        error: "a note can be deleted only by the user who created it",
+      });
+    }
 
-    const updatedNote = await note.save();
+    const { content, important } = req.body;
+
+    noteToUpdate.content = content;
+    noteToUpdate.important = important;
+
+    const updatedNote = await noteToUpdate.save();
+    user.notes = user.notes.concat(updatedNote._id);
+    await user.save();
+
     res.json(updatedNote);
   } catch (err) {
     next(err);

@@ -7,16 +7,19 @@ const initialUser = {
   password: "Tlqkf5678#",
 };
 
-const initialNotes = [
-  {
-    content: "HTML is easy",
+const userId = "68a37225d36bc2ecceafb4a0";
+
+// const initialNotes = [];
+const createInitialNote = async () => {
+  const note = new Note({
+    content: "A new note with username ghong1987",
     important: false,
-  },
-  {
-    content: "Browser can execute only JavaScript",
-    important: true,
-  },
-];
+    user: userId,
+  });
+
+  await note.save();
+  return note._id.toString();
+};
 
 const nonExistingId = async () => {
   const note = new Note({ content: "willremovethissoon" });
@@ -38,7 +41,8 @@ const usersInDb = async () => {
 
 module.exports = {
   initialUser,
-  initialNotes,
+  userId,
+  createInitialNote,
   nonExistingId,
   notesInDb,
   usersInDb,

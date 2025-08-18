@@ -47,9 +47,19 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sd
 ###
 POST http://localhost:3001/api/notes
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2ODlmYzE4OTFlZjQ0YWFkYTQ1NTQ0ODkiLCJpYXQiOjE3NTU0NzA0ODYsImV4cCI6MTc1NTQ3MDU0Nn0.ZlpzpeoSLUU42a7l-YdR2RhxnbGNwBgqPrsZafcunS8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2ODlmYzE4OTFlZjQ0YWFkYTQ1NTQ0ODkiLCJpYXQiOjE3NTU1MzU4NzYsImV4cCI6MTc1NTUzNTkzNn0.qMuyXl5tYfYq7644d0DaXBBndkQI-viFDBwc3NnwDRU
 
 {
   "content": "Trying to make a new note after the token has expired",
   "important": true
+}
+
+###
+POST http://localhost:3001/api/notes
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2ODlmYzE4OTFlZjQ0YWFkYTQ1NTQ0ODkiLCJpYXQiOjE3NTU1MzYwMDAsImV4cCI6MTc1NTUzNjA2MH0.X8xZcTfV7kcgKsQD8gkxDqMv6r9_XBu2hyeH3eU4k9w
+
+{
+  "content": "Hello world",
+  "important": false
 }
