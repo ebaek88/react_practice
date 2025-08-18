@@ -11,10 +11,14 @@ const api = supertest(app);
 
 describe("when there are initially some notes saved", () => {
   beforeEach(async () => {
-    await Note.deleteMany({});
-    await Note.insertMany(helper.initialNotes);
-    await User.deleteOne({ username: "ghong1987" });
-    await User.insertOne(helper.initialUser);
+    await Note.deleteMany({}); // delete all notes
+    await Note.insertMany(helper.initialNotes); // add initial notes
+    await User.deleteOne({ username: "ghong1987" }); // delete the previously created user
+    await api.post("/api/users").send({
+      // create a user same as the previously created one
+      username: helper.initialUser.username,
+      password: helper.initialUser.password,
+    });
     // Same as
     // const noteObjects = helper.initialNotes.map((note) => new Note(note));
     // const promiseArray = noteObjects.map((note) => note.save());
@@ -65,20 +69,52 @@ describe("when there are initially some notes saved", () => {
     });
   });
 
+  describe("login", () => {
+    test.only("succeeds with proper login info", async () => {
+      const loginInfo = {
+        username: helper.initialUser.username,
+        name: helper.initialUser.name,
+        password: helper.initialUser.password,
+      };
+
+      await api
+        .post("/api/login")
+        .send(loginInfo)
+        .expect(200)
+        .expect("Content-type", /application\/json/);
+    });
+
+    test.only("fails with status code 401 and appropriate message", async () => {
+      const loginInfo = {
+        username: "wrongid1234",
+        password: helper.initialUser.password,
+      };
+
+      await api
+        .post("/api/login")
+        .send(loginInfo)
+        .expect(401, { error: "invalid username or password" });
+    });
+  });
+
   describe("addition of a new note", () => {
-    test.only("succeeds with valid data", async () => {
-      const response = await api.get("/api/users/");
-      const users = response.body;
-      const userIdToUse = users[1].id;
+    test("succeeds with valid data", async () => {
+      const loginInfo = {
+        username: helper.initialUser.username,
+        password: helper.initialUser.password,
+      };
+
+      const loginResponse = await api.post("/api/login").send(loginInfo);
+      const authToken = loginResponse.body.token;
 
       const newNote = {
         content: "async/await simplifies making async calls",
         important: true,
-        userId: userIdToUse,
       };
 
       await api
         .post("/api/notes")
+        .set("Authorization", `Bearer ${authToken}`)
         .send(newNote)
         .expect(201)
         .expect("Content-Type", /application\/json/);
@@ -90,17 +126,38 @@ describe("when there are initially some notes saved", () => {
       assert(contents.includes("async/await simplifies making async calls"));
     });
 
-    test("fails with status code 400 if data invalid", async () => {
-      const response = await api.get("/api/users/");
-      const users = response.body;
-      const userIdToUse = users[1].id;
+    test("fails with status code 401 if authentication token is missing", async () => {
+      const newNote = {
+        content: "trying to save a note without login info",
+        important: true,
+      };
+
+      await api
+        .post("/api/notes")
+        .send(newNote)
+        .expect(401, { error: "token invalid" });
+    });
+
+    test("fails with status code 400 and appropriate message if data invalid", async () => {
+      const loginInfo = {
+        username: helper.initialUser.username,
+        password: helper.initialUser.password,
+      };
+
+      const loginResponse = await api.post("/api/login").send(loginInfo);
+      const authToken = loginResponse.body.token;
 
       const newNote = {
         important: true,
-        userId: userIdToUse,
       };
 
-      await api.post("/api/notes").send(newNote).expect(400);
+      await api
+        .post("/api/notes")
+        .set("Authorization", `Bearer ${authToken}`)
+        .send(newNote)
+        .expect(400, {
+          error: "Note validation failed: content: Content is missing!",
+        });
 
       const notesAtEnd = await helper.notesInDb();
 

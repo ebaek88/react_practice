@@ -49,19 +49,19 @@ notesRouter.post("/", async (req, res, next) => {
     return res.status(401).json({ error: "token invalid" });
   }
 
-  const user = await User.findById(decodedToken.id);
-
-  if (!user) {
-    return res.status(400).json({ error: "userId missing or not valid" });
-  }
-
-  const note = new Note({
-    content: body.content,
-    important: body.important || false,
-    user: user._id,
-  });
-
   try {
+    const user = await User.findById(decodedToken.id);
+
+    if (!user) {
+      return res.status(400).json({ error: "userId missing or not valid" });
+    }
+
+    const note = new Note({
+      content: body.content,
+      important: body.important || false,
+      user: user._id,
+    });
+
     const savedNote = await note.save();
     user.notes = user.notes.concat(savedNote._id);
     await user.save();

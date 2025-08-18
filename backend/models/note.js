@@ -4,7 +4,7 @@ const noteSchema = new mongoose.Schema({
   content: {
     type: String,
     minLength: 5,
-    required: true,
+    required: [true, "Content is missing!"],
   },
   important: Boolean,
   user: {
