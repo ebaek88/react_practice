@@ -7,9 +7,8 @@
 // You can then use a router for a particular root URL in this way separating your routes into files or even mini-apps.
 
 const notesRouter = require("express").Router();
-const jwt = require("jsonwebtoken");
 const Note = require("../models/note.js");
-const User = require("../models/user.js");
+const middleware = require("../utils/middleware.js");
 
 // Adding HTTP method routes, just like an application.
 notesRouter.get("/", async (req, res, next) => {
@@ -34,30 +33,12 @@ notesRouter.get("/:id", async (req, res, next) => {
   }
 });
 
-const getTokenFrom = (request) => {
-  const authorization = request.get("authorization");
-  if (authorization && authorization.startsWith("Bearer ")) {
-    return authorization.replace("Bearer ", "");
-  }
-  return null;
-};
-
-notesRouter.post("/", async (req, res, next) => {
+notesRouter.post("/", middleware.userExtractor, async (req, res, next) => {
   const body = req.body;
 
-  // Check if login has been made beforehand
-  const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
-  if (!decodedToken.id) {
-    return res.status(401).json({ error: "token invalid" });
-  }
-
   try {
-    // Check if the token is issued to a valid user
-    const user = await User.findById(decodedToken.id);
-
-    if (!user) {
-      return res.status(400).json({ error: "userId missing or not valid" });
-    }
+    // Retrieve information about the logged in user from the userExtractor middleware
+    const user = req.user;
 
     const note = new Note({
       content: body.content,
@@ -75,19 +56,10 @@ notesRouter.post("/", async (req, res, next) => {
   }
 });
 
-notesRouter.delete("/:id", async (req, res, next) => {
-  // Check if login has been made beforehand
-  const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
-  if (!decodedToken.id) {
-    return res.status(401).json({ error: "token invalid" });
-  }
-
+notesRouter.delete("/:id", middleware.userExtractor, async (req, res, next) => {
   try {
-    // Check if the token is issued to a valid user
-    const user = await User.findById(decodedToken.id);
-    if (!user) {
-      return res.status(400).json({ error: "userId missing or not valid" });
-    }
+    // Retrieve information about the logged in user from the userExtractor middleware
+    const user = req.user;
 
     // Check if the note to be deleted has been created by the user logged in
     const noteToDelete = await Note.findById(req.params.id);
@@ -106,19 +78,10 @@ notesRouter.delete("/:id", async (req, res, next) => {
   }
 });
 
-notesRouter.put("/:id", async (req, res, next) => {
-  // Check if login has been made beforehand
-  const decodedToken = jwt.verify(getTokenFrom(req), process.env.SECRET);
-  if (!decodedToken.id) {
-    return res.status(401).json({ error: "token invalid" });
-  }
-
+notesRouter.put("/:id", middleware.userExtractor, async (req, res, next) => {
   try {
-    // Check if the token is issued to a valid user
-    const user = await User.findById(decodedToken.id);
-    if (!user) {
-      return res.status(400).json({ error: "userId missing or not valid" });
-    }
+    // Retrieve information about the logged in user from the userExtractor middleware
+    const user = req.user;
 
     const noteToUpdate = await Note.findById(req.params.id);
 
@@ -129,7 +92,7 @@ notesRouter.put("/:id", async (req, res, next) => {
     // Check if the note to be updated has been created by the user logged in
     if (noteToUpdate.user.toString() !== user.id) {
       return res.status(401).json({
-        error: "a note can be deleted only by the user who created it",
+        error: "a note can be updated only by the user who created it",
       });
     }
 

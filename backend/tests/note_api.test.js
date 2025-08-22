@@ -141,7 +141,7 @@ describe("when there are initially some notes saved", () => {
       await api
         .post("/api/notes")
         .send(newNote)
-        .expect(401, { error: "token invalid" });
+        .expect(401, { error: "token nonexisting" });
     });
 
     test("fails with status code 400 and appropriate message if data invalid", async () => {
@@ -181,7 +181,7 @@ describe("when there are initially some notes saved", () => {
 
       await api
         .delete(`/api/notes/${noteToDelete.id}`)
-        .expect(401, { error: "token invalid" });
+        .expect(401, { error: "token nonexisting" });
 
       const notesAtEnd = await helper.notesInDb();
       assert.strictEqual(notesAtStart.length, notesAtEnd.length);
@@ -251,7 +251,7 @@ describe("when there are initially some notes saved", () => {
       await api
         .put(`/api/notes/${noteToUpdate.id}`)
         .send(editedNote)
-        .expect(401, { error: "token invalid" });
+        .expect(401, { error: "token nonexisting" });
 
       const notesAtEnd = await helper.notesInDb();
       assert.strictEqual(notesAtStart.length, notesAtEnd.length);
@@ -281,7 +281,7 @@ describe("when there are initially some notes saved", () => {
         .set("Authorization", `Bearer ${authToken}`)
         .send(editedNote)
         .expect(401, {
-          error: "a note can be deleted only by the user who created it",
+          error: "a note can be updated only by the user who created it",
         });
 
       const notesAtEnd = await helper.notesInDb();
@@ -311,7 +311,7 @@ describe("when there are initially some notes saved", () => {
         .expect(404);
     });
 
-    test("succeeds with status cod 200 if valid user and valid existing note", async () => {
+    test("succeeds with status code 200 if valid user and valid existing note", async () => {
       const notesAtStart = await helper.notesInDb();
       const noteToUpdate = notesAtStart[notesAtStart.length - 1];
 
