@@ -33,82 +33,97 @@ notesRouter.get("/:id", async (req, res, next) => {
   }
 });
 
-notesRouter.post("/", middleware.userExtractor, async (req, res, next) => {
-  const body = req.body;
+notesRouter.post(
+  "/",
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  async (req, res, next) => {
+    const body = req.body;
 
-  try {
-    // Retrieve information about the logged in user from the userExtractor middleware
-    const user = req.user;
+    try {
+      // Retrieve information about the logged in user from the userExtractor middleware
+      const user = req.user;
 
-    const note = new Note({
-      content: body.content,
-      important: body.important || false,
-      user: user._id,
-    });
-
-    const savedNote = await note.save();
-    user.notes = user.notes.concat(savedNote._id);
-    await user.save();
-
-    res.status(201).json(savedNote);
-  } catch (err) {
-    next(err);
-  }
-});
-
-notesRouter.delete("/:id", middleware.userExtractor, async (req, res, next) => {
-  try {
-    // Retrieve information about the logged in user from the userExtractor middleware
-    const user = req.user;
-
-    // Check if the note to be deleted has been created by the user logged in
-    const noteToDelete = await Note.findById(req.params.id);
-    if (noteToDelete.user.toString() !== user.id) {
-      return res.status(401).json({
-        error: "a note can be deleted only by the user who created it",
+      const note = new Note({
+        content: body.content,
+        important: body.important || false,
+        user: user._id,
       });
-    }
 
-    // Delete the note
-    await Note.findByIdAndDelete(req.params.id);
-    // Then, delete the note from the notes array in the user document
-    res.status(204).end();
-  } catch (err) {
-    next(err);
+      const savedNote = await note.save();
+      user.notes = user.notes.concat(savedNote._id);
+      await user.save();
+
+      res.status(201).json(savedNote);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-notesRouter.put("/:id", middleware.userExtractor, async (req, res, next) => {
-  try {
-    // Retrieve information about the logged in user from the userExtractor middleware
-    const user = req.user;
+notesRouter.delete(
+  "/:id",
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  async (req, res, next) => {
+    try {
+      // Retrieve information about the logged in user from the userExtractor middleware
+      const user = req.user;
 
-    const noteToUpdate = await Note.findById(req.params.id);
+      // Check if the note to be deleted has been created by the user logged in
+      const noteToDelete = await Note.findById(req.params.id);
+      if (noteToDelete.user.toString() !== user.id) {
+        return res.status(401).json({
+          error: "a note can be deleted only by the user who created it",
+        });
+      }
 
-    if (!noteToUpdate) {
-      return res.status(404).end();
+      // Delete the note
+      await Note.findByIdAndDelete(req.params.id);
+      // Then, delete the note from the notes array in the user document
+      res.status(204).end();
+    } catch (err) {
+      next(err);
     }
-
-    // Check if the note to be updated has been created by the user logged in
-    if (noteToUpdate.user.toString() !== user.id) {
-      return res.status(401).json({
-        error: "a note can be updated only by the user who created it",
-      });
-    }
-
-    const { content, important } = req.body;
-
-    noteToUpdate.content = content;
-    noteToUpdate.important = important;
-
-    const updatedNote = await noteToUpdate.save();
-    user.notes = user.notes.concat(updatedNote._id);
-    await user.save();
-
-    res.json(updatedNote);
-  } catch (err) {
-    next(err);
   }
-});
+);
+
+notesRouter.put(
+  "/:id",
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  async (req, res, next) => {
+    try {
+      // Retrieve information about the logged in user from the userExtractor middleware
+      const user = req.user;
+
+      const noteToUpdate = await Note.findById(req.params.id);
+
+      if (!noteToUpdate) {
+        return res.status(404).end();
+      }
+
+      // Check if the note to be updated has been created by the user logged in
+      if (noteToUpdate.user.toString() !== user.id) {
+        return res.status(401).json({
+          error: "a note can be updated only by the user who created it",
+        });
+      }
+
+      const { content, important } = req.body;
+
+      noteToUpdate.content = content;
+      noteToUpdate.important = important;
+
+      const updatedNote = await noteToUpdate.save();
+      user.notes = user.notes.concat(updatedNote._id);
+      await user.save();
+
+      res.json(updatedNote);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 module.exports = notesRouter;
