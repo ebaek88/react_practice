@@ -4,30 +4,37 @@ const baseUrl = "/api/notes";
 const getAll = async () => {
   try {
     const response = await axios.get(baseUrl);
-    // const nonExisting = {
-    //   id: 10000,
-    //   content: "This note is not saved to server",
-    //   important: true,
-    // };
     return response.data;
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
   }
 };
 
-const create = (newObject) => {
-  const request = axios.post(baseUrl, newObject);
-  return request.then((response) => response.data);
+const create = async (newObject) => {
+  try {
+    const response = await axios.post(baseUrl, newObject);
+    return response.data;
+  } catch (error) {
+    console.error(error.message);
+  }
 };
 
-const update = (id, newObject) => {
-  const request = axios.put(`${baseUrl}/${id}`, newObject);
-  return request.then((response) => response.data);
+const update = async (id, newObject) => {
+  try {
+    const response = await axios.put(`${baseUrl}/${id}`, newObject);
+    return response.data;
+  } catch (error) {
+    console.error(error.message);
+  }
 };
 
-const deleteNote = (id) => {
-  const request = axios.delete(`${baseUrl}/${id}`);
-  return request.then((response) => response.data);
+const deleteNote = async (id) => {
+  try {
+    const response = await axios.delete(`${baseUrl}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(error.message);
+  }
 };
 
 export default { getAll, create, update, deleteNote };

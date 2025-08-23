@@ -1,25 +1,35 @@
 import { useState, useEffect } from "react";
 import noteService from "./services/notes.js";
+import loginService from "./services/login.js";
 import Note from "./components/Note.jsx";
 import Notification from "./components/Notification.jsx";
 import Footer from "./components/Footer.jsx";
+import Login from "./components/Login.jsx";
+import NewNote from "./components/NewNote.jsx";
 
 const App = () => {
   const [notes, setNotes] = useState(null);
   const [newNote, setNewNote] = useState("a new note...");
   const [showAll, setShowAll] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [user, setUser] = useState(null);
 
+  // Callbacks need to be synchronous in order to prevent race condition.
+  // In order to use async functions as callbacks, wrap them around synch ones.
   useEffect(() => {
-    noteService
-      .getAll()
-      .then((initialNotes) => {
+    const fetchData = async () => {
+      try {
+        const initialNotes = await noteService.getAll();
         setNotes(initialNotes);
-      })
-      .catch((error) => console.log(error.message));
+      } catch (error) {
+        console.error(error.message);
+      }
+    };
+
+    fetchData();
   }, []);
-  // shows that useEffect is executed asynchronously
-  // console.log("render", notes.length, "notes"); //render 0 notes -> render 4 notes
 
   // Do not render anything if notes is still null.
   // This conditional rendering is useful in cases where it is impossible to define the
@@ -28,6 +38,7 @@ const App = () => {
     return null;
   }
 
+  // Helper function to render Notification component
   const showNotification = (msg, timeout = 3000) => {
     setErrorMessage(msg);
     setTimeout(() => {
@@ -35,7 +46,8 @@ const App = () => {
     }, timeout);
   };
 
-  const addNote = (event) => {
+  // Adding a new note
+  const addNote = async (event) => {
     event.preventDefault();
     const noteObject = {
       content: newNote,
@@ -43,23 +55,35 @@ const App = () => {
       // id: String(notes.length + 1), <- now the DB takes care of it
     };
 
-    noteService
-      .create(noteObject)
-      .then((returnedNote) => {
-        // console.log(returnedNote);
-        setNotes(notes.concat(returnedNote));
-        setNewNote("");
-      })
-      .catch((error) => {
-        console.log(error.response.data.error);
-        showNotification(error.response.data.error);
-      });
+    try {
+      const returnedNote = await noteService.create(noteObject);
+      setNotes(notes.concat(returnedNote));
+      setNewNote("");
+      showNotification(`Added note ${returnedNote.content} successfully!`);
+    } catch (error) {
+      console.log(error.response.data.error);
+      showNotification(error.response.data.error);
+    }
+    // noteService
+    //   .create(noteObject)
+    //   .then((returnedNote) => {
+    //     // console.log(returnedNote);
+    //     setNotes(notes.concat(returnedNote));
+    //     setNewNote("");
+    //     showNotification(`Added note ${returnedNote.content} successfully!`);
+    //   })
+    //   .catch((error) => {
+    //     console.log(error.response.data.error);
+    //     showNotification(error.response.data.error);
+    //   });
   };
 
-  const handleNoteChange = (event) => {
-    setNewNote(event.target.value);
+  // Handler when a new note is being typed
+  const handleNoteChange = (evt) => {
+    setNewNote(evt.target.value);
   };
 
+  // Changing the important property of a note and updating it
   const toggleImportanceOf = (id) => {
     const note = notes.find((note) => note.id === id);
     const changedNote = { ...note, important: !note.important };
@@ -78,6 +102,7 @@ const App = () => {
       });
   };
 
+  // Deleting a note
   const deleteNote = (id) => {
     const note = notes.find((note) => note.id === id);
     if (!note) return;
@@ -96,12 +121,60 @@ const App = () => {
       });
   };
 
+  // Function to filter important notes only or to reset the filter
   const notesToShow = showAll ? notes : notes.filter((note) => note.important);
+
+  // Handler for user login
+  const handleLogin = async (evt) => {
+    evt.preventDefault();
+
+    try {
+      const user = await loginService.login({ username, password });
+      setUser(user);
+      setUsername("");
+      setPassword("");
+      showNotification(`Welcome ${user.username}!`);
+    } catch (error) {
+      showNotification("wrong credentials");
+      console.error(error.response.data.error);
+    }
+  };
+
+  // Handlers for username and password changes
+  const handleUsernameChange = (evt) => {
+    setUsername(evt.target.value);
+  };
+
+  const handlePasswordChange = (evt) => {
+    setPassword(evt.target.value);
+  };
 
   return (
     <div>
       <h1>Notes</h1>
       <Notification message={errorMessage} />
+
+      {/* conditionally rendering the login form and the new note form */}
+      {!user && (
+        <Login
+          username={username}
+          password={password}
+          handleLogin={handleLogin}
+          handleUsernameChange={handleUsernameChange}
+          handlePasswordChange={handlePasswordChange}
+        />
+      )}
+      {user && (
+        <div>
+          <p>{user.name} logged in</p>
+          <NewNote
+            newNote={newNote}
+            handleNoteChange={handleNoteChange}
+            addNote={addNote}
+          />
+        </div>
+      )}
+
       <div>
         <button onClick={() => setShowAll(!showAll)}>
           show {showAll ? "important" : "all"}
@@ -117,10 +190,6 @@ const App = () => {
           />
         ))}
       </ul>
-      <form onSubmit={addNote}>
-        <input type="text" value={newNote} onChange={handleNoteChange} />
-        <button type="submit">save</button>
-      </form>
       <Footer />
     </div>
   );
