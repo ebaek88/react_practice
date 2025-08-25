@@ -7,6 +7,7 @@ import Footer from "./components/Footer.jsx";
 import Login from "./components/Login.jsx";
 import NewNote from "./components/NewNote.jsx";
 
+// The error object is specific to Axios
 const App = () => {
   const [notes, setNotes] = useState(null);
   const [newNote, setNewNote] = useState("a new note...");
@@ -16,7 +17,7 @@ const App = () => {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
 
-  // Callbacks need to be synchronous in order to prevent race condition.
+  // For useEffect, callbacks need to be synchronous in order to prevent race condition.
   // In order to use async functions as callbacks, wrap them around synch ones.
   useEffect(() => {
     const fetchData = async () => {
@@ -24,11 +25,24 @@ const App = () => {
         const initialNotes = await noteService.getAll();
         setNotes(initialNotes);
       } catch (error) {
-        console.error(error.message);
+        console.error(error.response.status);
+        console.error(error.response.data);
+        showNotification(
+          `Notes cannot be fetched from the server: ${error.response.data.error}`
+        );
       }
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON);
+      setUser(user);
+      noteService.setToken(user.token);
+    }
   }, []);
 
   // Do not render anything if notes is still null.
@@ -61,8 +75,11 @@ const App = () => {
       setNewNote("");
       showNotification(`Added note ${returnedNote.content} successfully!`);
     } catch (error) {
-      console.log(error.response.data.error);
-      showNotification(error.response.data.error);
+      console.error(error.response.status);
+      console.error(error.response.data);
+      showNotification(
+        `Notes cannot be added to the server: ${error.response.data.error}`
+      );
     }
     // noteService
     //   .create(noteObject)
@@ -84,41 +101,71 @@ const App = () => {
   };
 
   // Changing the important property of a note and updating it
-  const toggleImportanceOf = (id) => {
+  const toggleImportanceOf = async (id) => {
     const note = notes.find((note) => note.id === id);
     const changedNote = { ...note, important: !note.important };
 
-    noteService
-      .update(id, changedNote)
-      .then((returnedNote) => {
-        setNotes(notes.map((note) => (note.id === id ? returnedNote : note)));
-      })
-      .catch((error) => {
-        console.log(error.message);
-        showNotification(
-          `Note '${note.content}' was already removed from server`
-        );
+    try {
+      const returnedNote = await noteService.update(id, changedNote);
+      setNotes(notes.map((note) => (note.id === id ? returnedNote : note)));
+    } catch (error) {
+      console.error(error.response.status);
+      console.error(error.response.data);
+      if (error.response.status === 404) {
+        showNotification(`The note ${note.content} has already been removed.`);
         setNotes(notes.filter((note) => note.id !== id));
-      });
+      } else {
+        showNotification(
+          `Cannot be updated from the server: ${error.response.data.error}`
+        );
+      }
+    }
+    // noteService
+    //   .update(id, changedNote)
+    //   .then((returnedNote) => {
+    //     setNotes(notes.map((note) => (note.id === id ? returnedNote : note)));
+    //   })
+    //   .catch((error) => {
+    //     console.log(error.message);
+    //     showNotification(
+    //       `Note '${note.content}' was already removed from server`
+    //     );
+    //     setNotes(notes.filter((note) => note.id !== id));
+    //   });
   };
 
   // Deleting a note
-  const deleteNote = (id) => {
+  const deleteNote = async (id) => {
     const note = notes.find((note) => note.id === id);
     if (!note) return;
 
-    noteService
-      .deleteNote(id)
-      .then(showNotification(`Deleted note ${note.content} successfully!`))
-      .catch((error) => {
-        console.log(error.message);
-        showNotification(
-          `Note '${note.content}' was already removed from server`
-        );
-      })
-      .finally(() => {
+    try {
+      await noteService.deleteNote(id);
+      showNotification(`Deleted note ${note.content} successfully!`);
+    } catch (error) {
+      if (error.response.status === 404) {
+        showNotification(`The note ${note.content} has already been removed.`);
         setNotes(notes.filter((note) => note.id !== id));
-      });
+      } else {
+        showNotification(
+          `Cannot be updated from the server: ${error.response.data.error}`
+        );
+      }
+    } finally {
+      setNotes(notes.filter((note) => note.id !== id));
+    }
+    // noteService
+    //   .deleteNote(id)
+    //   .then(showNotification(`Deleted note ${note.content} successfully!`))
+    //   .catch((error) => {
+    //     console.log(error.message);
+    //     showNotification(
+    //       `Note '${note.content}' was already removed from server`
+    //     );
+    //   })
+    //   .finally(() => {
+    //     setNotes(notes.filter((note) => note.id !== id));
+    //   });
   };
 
   // Function to filter important notes only or to reset the filter
@@ -130,13 +177,18 @@ const App = () => {
 
     try {
       const user = await loginService.login({ username, password });
+      if (!user) return; // when the login failed, user becomes undefined
+
+      window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
+      noteService.setToken(user.token);
       setUser(user);
       setUsername("");
       setPassword("");
       showNotification(`Welcome ${user.username}!`);
     } catch (error) {
-      showNotification("wrong credentials");
-      console.error(error.response.data.error);
+      console.error(error.response.status);
+      console.error(error.response.data);
+      showNotification(`wrong credentials: ${error.response.data.error}`);
     }
   };
 
@@ -147,6 +199,12 @@ const App = () => {
 
   const handlePasswordChange = (evt) => {
     setPassword(evt.target.value);
+  };
+
+  // Handler for logout
+  const logoutHandler = () => {
+    window.localStorage.clear();
+    setUser(null);
   };
 
   return (
@@ -166,7 +224,10 @@ const App = () => {
       )}
       {user && (
         <div>
-          <p>{user.name} logged in</p>
+          <p>
+            {user.name} logged in
+            <button onClick={logoutHandler}>logout</button>
+          </p>
           <NewNote
             newNote={newNote}
             handleNoteChange={handleNoteChange}
