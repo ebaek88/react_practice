@@ -7,7 +7,7 @@ import Footer from "./components/Footer.jsx";
 import Login from "./components/Login.jsx";
 import NewNote from "./components/NewNote.jsx";
 
-// The error object is specific to Axios
+// The error object structure is specific to Axios
 const App = () => {
   const [notes, setNotes] = useState(null);
   const [newNote, setNewNote] = useState("a new note...");
@@ -107,6 +107,7 @@ const App = () => {
 
     try {
       const returnedNote = await noteService.update(id, changedNote);
+      showNotification(`Updated the note ${note.content} successfully!`);
       setNotes(notes.map((note) => (note.id === id ? returnedNote : note)));
     } catch (error) {
       console.error(error.response.status);
