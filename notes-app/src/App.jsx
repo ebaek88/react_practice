@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import noteService from "./services/notes.js";
 import loginService from "./services/login.js";
 import Note from "./components/Note.jsx";
@@ -43,6 +43,9 @@ const App = () => {
     }
   }, []);
 
+  // Reference to the NoteForm component
+  const noteFormRef = useRef();
+
   // Do not render anything if notes is still null.
   // This conditional rendering is useful in cases where it is impossible to define the
   // state so that the initial rendering is possible.
@@ -60,6 +63,7 @@ const App = () => {
 
   // Adding a new note
   const addNote = async (noteObject) => {
+    noteFormRef.current.toggleVisibility();
     try {
       const returnedNote = await noteService.create(noteObject);
       setNotes(notes.concat(returnedNote));
@@ -202,7 +206,7 @@ const App = () => {
             {user.name} logged in
             <button onClick={logoutHandler}>logout</button>
           </p>
-          <Togglable buttonLabel={"new note"}>
+          <Togglable buttonLabel={"new note"} ref={noteFormRef}>
             <NoteForm createNote={addNote} />
           </Togglable>
         </div>
