@@ -1,5 +1,5 @@
 const Notification = ({ message }) => {
-  const keywords = ["Added", "Deleted", "Updated", "Welcome"];
+  const keywords = ["Added", "Deleted", "Updated", "Welcome", "successfully"];
 
   if (message === null) {
     return null;

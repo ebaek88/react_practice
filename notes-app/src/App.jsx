@@ -5,16 +5,14 @@ import Note from "./components/Note.jsx";
 import Notification from "./components/Notification.jsx";
 import Footer from "./components/Footer.jsx";
 import Login from "./components/Login.jsx";
-import NewNote from "./components/NewNote.jsx";
+import NoteForm from "./components/NoteForm.jsx";
+import Togglable from "./components/Togglable.jsx";
 
 // The error object structure is specific to Axios
 const App = () => {
   const [notes, setNotes] = useState(null);
-  const [newNote, setNewNote] = useState("a new note...");
   const [showAll, setShowAll] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
 
   // For useEffect, callbacks need to be synchronous in order to prevent race condition.
@@ -61,18 +59,10 @@ const App = () => {
   };
 
   // Adding a new note
-  const addNote = async (event) => {
-    event.preventDefault();
-    const noteObject = {
-      content: newNote,
-      important: Math.random() < 0.5,
-      // id: String(notes.length + 1), <- now the DB takes care of it
-    };
-
+  const addNote = async (noteObject) => {
     try {
       const returnedNote = await noteService.create(noteObject);
       setNotes(notes.concat(returnedNote));
-      setNewNote("");
       showNotification(`Added note ${returnedNote.content} successfully!`);
     } catch (error) {
       console.error(error.response.status);
@@ -96,9 +86,9 @@ const App = () => {
   };
 
   // Handler when a new note is being typed
-  const handleNoteChange = (evt) => {
-    setNewNote(evt.target.value);
-  };
+  // const handleNoteChange = (evt) => {
+  //   setNewNote(evt.target.value);
+  // };
 
   // Changing the important property of a note and updating it
   const toggleImportanceOf = async (id) => {
@@ -143,17 +133,16 @@ const App = () => {
     try {
       await noteService.deleteNote(id);
       showNotification(`Deleted note ${note.content} successfully!`);
+      setNotes(notes.filter((note) => note.id !== id));
     } catch (error) {
       if (error.response.status === 404) {
         showNotification(`The note ${note.content} has already been removed.`);
         setNotes(notes.filter((note) => note.id !== id));
       } else {
         showNotification(
-          `Cannot be updated from the server: ${error.response.data.error}`
+          `Cannot be deleted from the server: ${error.response.data.error}`
         );
       }
-    } finally {
-      setNotes(notes.filter((note) => note.id !== id));
     }
     // noteService
     //   .deleteNote(id)
@@ -173,18 +162,14 @@ const App = () => {
   const notesToShow = showAll ? notes : notes.filter((note) => note.important);
 
   // Handler for user login
-  const handleLogin = async (evt) => {
-    evt.preventDefault();
-
+  const handleLogin = async (loginObject) => {
     try {
-      const user = await loginService.login({ username, password });
+      const user = await loginService.login(loginObject);
       if (!user) return; // when the login failed, user becomes undefined
 
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       noteService.setToken(user.token);
       setUser(user);
-      setUsername("");
-      setPassword("");
       showNotification(`Welcome ${user.username}!`);
     } catch (error) {
       console.error(error.response.status);
@@ -193,19 +178,11 @@ const App = () => {
     }
   };
 
-  // Handlers for username and password changes
-  const handleUsernameChange = (evt) => {
-    setUsername(evt.target.value);
-  };
-
-  const handlePasswordChange = (evt) => {
-    setPassword(evt.target.value);
-  };
-
   // Handler for logout
   const logoutHandler = () => {
     window.localStorage.clear();
     setUser(null);
+    showNotification("Logged out successfully!");
   };
 
   return (
@@ -215,13 +192,9 @@ const App = () => {
 
       {/* conditionally rendering the login form and the new note form */}
       {!user && (
-        <Login
-          username={username}
-          password={password}
-          handleLogin={handleLogin}
-          handleUsernameChange={handleUsernameChange}
-          handlePasswordChange={handlePasswordChange}
-        />
+        <Togglable buttonLabel={"login"}>
+          <Login handleLogin={handleLogin} />
+        </Togglable>
       )}
       {user && (
         <div>
@@ -229,11 +202,9 @@ const App = () => {
             {user.name} logged in
             <button onClick={logoutHandler}>logout</button>
           </p>
-          <NewNote
-            newNote={newNote}
-            handleNoteChange={handleNoteChange}
-            addNote={addNote}
-          />
+          <Togglable buttonLabel={"new note"}>
+            <NoteForm createNote={addNote} />
+          </Togglable>
         </div>
       )}
 
