@@ -33,7 +33,11 @@ app.use(middleware.requestLogger);
 app.use("/api/notes", notesRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/login", loginRouter);
-// app.use(express.static("dist"));
+
+if (process.env.NODE_ENV === "test") {
+  const testingRouter = require("./controllers/testing.js");
+  app.use("/api/testing", testingRouter);
+}
 
 // The middleware for handling unsupported routes should be loaded AFTER the route handlers.
 // Otherwise, it will respond to all requests with 404 unknown endpoint!
