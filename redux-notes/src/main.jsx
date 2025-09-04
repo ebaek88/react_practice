@@ -17,7 +17,7 @@ const store = createStore(reducer);
 console.log(store.getState());
 
 store.subscribe(() => console.log(store.getState()));
-store.dispatch(filterChange("IMPORTANT"));
+// store.dispatch(filterChange("IMPORTANT"));
 store.dispatch(
   createNote("combineReducers forms one reducer from many simple reducers")
 );
