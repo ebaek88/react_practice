@@ -5,7 +5,7 @@ describe("noteReducer", () => {
   test("returns new state with action notes/createNote", () => {
     const state = [];
     const action = {
-      type: "notes/createNote",
+      type: "notes/appendNote",
       payload: "the app state is in redux store",
     };
 

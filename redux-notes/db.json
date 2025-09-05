@@ -13,7 +13,7 @@
     {
       "id": "76c4",
       "content": "hello:)",
-      "important": false
+      "important": true
     },
     {
       "id": "cfac",
@@ -28,7 +28,12 @@
     {
       "id": "018e",
       "content": "what time is it now?",
-      "important": false
+      "important": true
+    },
+    {
+      "id": "2c79",
+      "content": "fullstack is hard :(",
+      "important": true
     }
   ]
 }
