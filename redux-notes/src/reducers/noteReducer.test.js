@@ -11,9 +11,10 @@ describe("noteReducer", () => {
 
     deepFreeze(state);
     const newState = noteReducer(state, action);
+    // console.log(newState); //[ 'the app state is in redux store' ]
 
     expect(newState).toHaveLength(1);
-    expect(newState.map((s) => s.content)).toContainEqual(action.payload);
+    expect(newState).toContainEqual(action.payload);
   });
 
   test("returns new state with action notes/toggleImportanceOf", () => {
