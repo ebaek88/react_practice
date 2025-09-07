@@ -7,7 +7,7 @@
     },
     {
       "content": "state changes are made with actions",
-      "important": false,
+      "important": true,
       "id": "2"
     },
     {
@@ -43,6 +43,16 @@
     {
       "id": "34aa",
       "content": "밥먹읍시다",
+      "important": false
+    },
+    {
+      "id": "1ad5",
+      "content": "I miss home :(",
+      "important": true
+    },
+    {
+      "id": "7c44",
+      "content": "can I go home?",
       "important": false
     }
   ]
