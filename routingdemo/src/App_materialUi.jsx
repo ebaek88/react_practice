@@ -1,4 +1,19 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import {
+  Container,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  Paper,
+  TextField,
+  Button,
+  Alert,
+  AppBar,
+  Toolbar,
+  IconButton,
+} from "@mui/material";
 import {
   Routes,
   Route,
@@ -7,37 +22,6 @@ import {
   useNavigate,
   useMatch,
 } from "react-router-dom";
-import styled from "styled-components";
-
-// UI components defined by styled-components
-const Button = styled.button`
-  background: Bisque;
-  font-size: 1em;
-  margin: 1em;
-  padding: 0.25em 1em;
-  border: 2px solid Chocolate;
-  border-radius: 3px;
-`;
-
-const Input = styled.input`
-  margin: 0.25em;
-`;
-
-const Page = styled.div`
-  padding: 1em;
-  background: papayawhip;
-`;
-
-const Navigation = styled.div`
-  background: Burlywood;
-  padding: 1em;
-`;
-
-const Footer = styled.div`
-  background: Chocolate;
-  padding: 1em;
-  margin-top: 1em;
-`;
 
 const Home = () => (
   <div>
@@ -79,13 +63,20 @@ const Note = ({ note }) => {
 const Notes = ({ notes }) => (
   <div>
     <h2>Notes</h2>
-    <ul>
-      {notes.map((note) => (
-        <li key={note.id}>
-          <Link to={`/notes/${note.id}`}>{note.content}</Link>
-        </li>
-      ))}
-    </ul>
+    <TableContainer component={Paper}>
+      <Table>
+        <TableBody>
+          {notes.map((note) => (
+            <TableRow key={note.id}>
+              <TableCell>
+                <Link to={`/notes/${note.id}`}>{note.content}</Link>
+              </TableCell>
+              <TableCell>{note.user}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   </div>
 );
 
@@ -114,14 +105,16 @@ const Login = (props) => {
       <h2>login</h2>
       <form onSubmit={onSubmit}>
         <div>
-          username: <Input />
+          <TextField label="username" />
         </div>
         <div>
-          password: <Input type="password" />
+          <TextField label="password" type="password" />
         </div>
-        <Button type="submit" primary="">
-          login
-        </Button>
+        <div>
+          <Button variant="contained" type="submit">
+            login
+          </Button>
+        </div>
       </form>
     </div>
   );
@@ -150,13 +143,17 @@ const App = () => {
   ]);
 
   const [user, setUser] = useState(null);
+  const [message, setMessage] = useState(null);
+
+  const notiTimeoutId = useRef(null);
 
   const login = (user) => {
     setUser(user);
-  };
-
-  const padding = {
-    padding: 5,
+    clearTimeout(notiTimeoutId.current);
+    setMessage(`welcome ${user}`);
+    notiTimeoutId.current = setTimeout(() => {
+      setMessage(null);
+    }, 5000);
   };
 
   const match = useMatch("/notes/:id");
@@ -165,25 +162,28 @@ const App = () => {
     : null;
 
   return (
-    <Page>
-      <Navigation>
-        <Link style={padding} to="/">
-          home
-        </Link>
-        <Link style={padding} to="/notes">
-          notes
-        </Link>
-        <Link style={padding} to="/users">
-          users
-        </Link>
-        {user ? (
-          <em>{user} logged in</em>
-        ) : (
-          <Link style={padding} to="/login">
-            login
-          </Link>
-        )}
-      </Navigation>
+    <Container>
+      {message && <Alert severity="success">{message}</Alert>}
+      <AppBar position="static">
+        <Toolbar>
+          <Button color="inherit" component={Link} to="/">
+            home
+          </Button>
+          <Button color="inherit" component={Link} to="/notes">
+            notes
+          </Button>
+          <Button color="inherit" component={Link} to="/users">
+            users
+          </Button>
+          {user ? (
+            <em>{user} logged in</em>
+          ) : (
+            <Button color="inherit" component={Link} to="/login">
+              login
+            </Button>
+          )}
+        </Toolbar>
+      </AppBar>
 
       <Routes>
         <Route path="/notes/:id" element={<Note note={note} />} />
@@ -196,11 +196,11 @@ const App = () => {
         <Route path="/" element={<Home />} />
       </Routes>
 
-      <Footer>
+      <footer>
         <br />
         <em>Note app, Department of Computer Science 2025</em>
-      </Footer>
-    </Page>
+      </footer>
+    </Container>
   );
 };
 
