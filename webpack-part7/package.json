@@ -1,0 +1,22 @@
+{
+  "name": "webpack-part7",
+  "version": "0.0.1",
+  "description": "practicing webpack",
+  "scripts": {
+    "build": "webpack --mode=development"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-react": "^7.27.1",
+    "babel-loader": "^10.0.0",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "core-js": "^3.45.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "regenerator-runtime": "^0.14.1"
+  }
+}
